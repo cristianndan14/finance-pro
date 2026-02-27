@@ -5,7 +5,7 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
     const [formData, setFormData] = useState({
         name: '',
         type: 'bank',
-        current_balance: 0,
+        current_balance: '',
         currency: 'ARS',
     })
     const [loading, setLoading] = useState(false)
@@ -35,12 +35,13 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
             const dataToSubmit = {
                 ...formData,
                 current_balance: formData.type === 'credit'
-                    ? -Math.abs(formData.current_balance)
-                    : formData.current_balance,
-                installments_limit: isUnifiedLimit ? null : formData.installments_limit
+                    ? -Math.abs(Number(formData.current_balance) || 0)
+                    : Number(formData.current_balance) || 0,
+                installments_limit: isUnifiedLimit ? null : Number(formData.installments_limit) || null,
+                credit_limit: formData.type === 'credit' ? (Number(formData.credit_limit) || null) : null
             }
             await onSubmit(dataToSubmit)
-            setFormData({ name: '', type: 'bank', current_balance: 0, currency: 'ARS' })
+            setFormData({ name: '', type: 'bank', current_balance: '', currency: 'ARS' })
         } catch (error) {
             console.error('Error saving account:', error)
         } finally {
@@ -100,14 +101,11 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             {formData.type === 'credit' ? 'Deuda Actual' : (initialData ? 'Saldo Actual' : 'Saldo Inicial')}
                         </label>
-                        <input
-                            type="number"
-                            step="0.01"
+                        <CurrencyInput
                             required
                             value={formData.current_balance}
-                            onChange={(e) => setFormData({ ...formData, current_balance: parseFloat(e.target.value) })}
+                            onChange={(val) => setFormData({ ...formData, current_balance: val })}
                             placeholder={formData.type === 'credit' ? "50000.00" : "0.00"}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
 
@@ -131,13 +129,10 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         {isUnifiedLimit ? 'Límite de Crédito' : 'Límite 1 Pago'}
                                     </label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
+                                    <CurrencyInput
                                         required
                                         value={formData.credit_limit || ''}
-                                        onChange={(e) => setFormData({ ...formData, credit_limit: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        onChange={(val) => setFormData({ ...formData, credit_limit: val })}
                                     />
                                 </div>
                                 {!isUnifiedLimit && (
@@ -145,13 +140,10 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Límite Cuotas
                                         </label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
+                                        <CurrencyInput
                                             required={!isUnifiedLimit}
                                             value={formData.installments_limit || ''}
-                                            onChange={(e) => setFormData({ ...formData, installments_limit: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            onChange={(val) => setFormData({ ...formData, installments_limit: val })}
                                         />
                                     </div>
                                 )}

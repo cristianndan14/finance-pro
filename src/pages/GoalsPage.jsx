@@ -4,6 +4,7 @@ import { useAccounts } from '../hooks/useAccounts'
 import { Plus, Loader2, Target, TrendingUp, Calendar, Users, Trash2, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import ShareModal from '../components/ui/ShareModal'
+import CurrencyInput from '../components/ui/CurrencyInput'
 
 export default function GoalsPage() {
     const { goals, loading, createGoal, deleteGoal } = useGoals()
@@ -33,7 +34,7 @@ export default function GoalsPage() {
             await createGoal(
                 {
                     name: formData.name,
-                    target_amount: parseFloat(formData.target_amount),
+                    target_amount: parseFloat(formData.target_amount) || 0,
                     deadline: formData.deadline || null,
                 },
                 formData.account_id
@@ -222,14 +223,11 @@ export default function GoalsPage() {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Monto Objetivo</label>
-                                <input
+                                <CurrencyInput
                                     required
-                                    type="number"
-                                    step="0.01"
                                     value={formData.target_amount}
-                                    onChange={e => setFormData({ ...formData, target_amount: e.target.value })}
+                                    onChange={val => setFormData({ ...formData, target_amount: val })}
                                     placeholder="0.00"
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
 

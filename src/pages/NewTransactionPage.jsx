@@ -7,6 +7,7 @@ import { useAccounts } from '../hooks/useAccounts'
 import { useTransactions } from '../hooks/useTransactions'
 import { useRecurringTransactions } from '../hooks/useRecurringTransactions'
 import { ArrowLeft, Loader2, Wallet } from 'lucide-react'
+import CurrencyInput from '../components/ui/CurrencyInput'
 
 export default function NewTransactionPage() {
     const navigate = useNavigate()
@@ -244,14 +245,12 @@ export default function NewTransactionPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                         Monto
                     </label>
-                    <input
-                        type="number"
-                        step="0.01"
+                    <CurrencyInput
                         required
                         value={formData.amount}
-                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        onChange={(val) => setFormData({ ...formData, amount: val })}
                         placeholder="0.00"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                        className="!text-lg"
                     />
                 </div>
 

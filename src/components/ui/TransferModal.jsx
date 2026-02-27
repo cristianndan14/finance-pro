@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, ArrowRight, Wallet, ArrowLeft } from 'lucide-react'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useTransactions } from '../../hooks/useTransactions'
+import CurrencyInput from './CurrencyInput'
 
 export default function TransferModal({ isOpen, onClose, preselectedSourceId, preselectedTargetId }) {
     const { accounts } = useAccounts()
@@ -79,16 +80,12 @@ export default function TransferModal({ isOpen, onClose, preselectedSourceId, pr
                             {isPaymentMode ? 'Monto a pagar' : 'Monto a transferir'}
                         </label>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
-                            <input
+                            <CurrencyInput
                                 required
-                                type="number"
-                                step="0.01"
                                 value={amount}
-                                onChange={e => setAmount(e.target.value)}
+                                onChange={val => setAmount(val)}
                                 placeholder="0.00"
-                                className="w-full pl-8 pr-4 py-3 text-2xl font-bold border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                autoFocus
+                                className="!py-3 !text-2xl font-bold !rounded-xl"
                             />
                         </div>
                     </div>

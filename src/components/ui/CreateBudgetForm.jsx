@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Wallet } from 'lucide-react'
+import CurrencyInput from './CurrencyInput'
 
 export default function CreateBudgetForm({ initialData, onSubmit, onCancel }) {
     const [formData, setFormData] = useState({
@@ -72,13 +73,10 @@ export default function CreateBudgetForm({ initialData, onSubmit, onCancel }) {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Límite Mensual (Opcional)
                         </label>
-                        <input
-                            type="number"
-                            step="0.01"
+                        <CurrencyInput
                             value={formData.monthly_limit}
-                            onChange={(e) => setFormData({ ...formData, monthly_limit: e.target.value })}
+                            onChange={(val) => setFormData({ ...formData, monthly_limit: val })}
                             placeholder="0.00"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                         <p className="text-xs text-gray-500 mt-1">
                             Deja en blanco si es un presupuesto sin límite fijo.

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import TransferModal from '../components/ui/TransferModal'
 import ShareModal from '../components/ui/ShareModal'
+import CurrencyInput from '../components/ui/CurrencyInput'
 
 export default function GoalDetailPage() {
     const { id } = useParams()
@@ -343,16 +344,13 @@ export default function GoalDetailPage() {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Monto Objetivo</label>
-                                <input
+                                <CurrencyInput
                                     required
-                                    type="number"
-                                    step="0.01"
                                     value={editFormData.target_amount}
-                                    onChange={e => {
-                                        setEditFormData({ ...editFormData, target_amount: e.target.value })
+                                    onChange={val => {
+                                        setEditFormData({ ...editFormData, target_amount: val })
                                         setEditError('')
                                     }}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                                 />
                                 <p className="text-xs text-blue-600 mt-1">Solo puedes incrementar el monto actual ({new Intl.NumberFormat('es-AR', { style: 'currency', currency: goal.myAccount?.currency || 'ARS' }).format(goal.target_amount)}).</p>
                             </div>
