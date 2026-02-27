@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
+import CurrencyInput from './CurrencyInput'
 
 export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
     const [formData, setFormData] = useState({
