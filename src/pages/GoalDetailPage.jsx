@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import {
     ArrowLeft, Loader2, Calendar, Users,
-    Target, Trash2, ArrowRightLeft
+    Target, Trash2, ArrowRightLeft, Edit3, Plus
 } from 'lucide-react'
 import TransferModal from '../components/ui/TransferModal'
 import ShareModal from '../components/ui/ShareModal'
@@ -15,17 +15,64 @@ export default function GoalDetailPage() {
     const { id } = useParams()
     const navigate = useNavigate()
     const { user } = useAuth()
-    const { goals, loading, deleteGoal, updateGoalAccount } = useGoals()
+    const { goals, loading, deleteGoal, updateGoal, updateGoalAccount } = useGoals()
     const { accounts } = useAccounts()
 
     const [transactions, setTransactions] = useState([])
     const [txLoading, setTxLoading] = useState(true)
     const [showTransferModal, setShowTransferModal] = useState(false)
     const [sharingGoal, setSharingGoal] = useState(false)
+    const [showEditModal, setShowEditModal] = useState(false)
+    const [editFormData, setEditFormData] = useState({ name: '', target_amount: '', deadline: '', account_id: '' })
+    const [isSubmittingEdit, setIsSubmittingEdit] = useState(false)
+    const [editError, setEditError] = useState('')
 
     const goal = goals.find(g => g.id === id)
     const isCreator = goal?.user_id === user?.id
     const savingsAccounts = accounts.filter(a => a.type !== 'credit')
+
+    // Filter available accounts: the ones not in any other goal, plus the current one
+    const availableAccounts = savingsAccounts.filter(acc => {
+        if (goal && acc.id === goal.account_id) return true
+        return !goals.some(g => g.id !== goal?.id && g.account_id === acc.id)
+    })
+
+    const handleOpenEdit = () => {
+        setEditFormData({
+            name: goal.name,
+            target_amount: goal.target_amount || '',
+            deadline: goal.deadline ? goal.deadline.split('T')[0] : '',
+            account_id: goal.account_id || ''
+        })
+        setEditError('')
+        setShowEditModal(true)
+    }
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault()
+        setEditError('')
+
+        const newAmount = parseFloat(editFormData.target_amount)
+        if (newAmount < goal.target_amount) {
+            setEditError(`El nuevo monto no puede ser menor al actual (${new Intl.NumberFormat('es-AR', { style: 'currency', currency: goal.myAccount?.currency || 'ARS' }).format(goal.target_amount)}).`)
+            return
+        }
+
+        setIsSubmittingEdit(true)
+        try {
+            await updateGoal(goal.id, {
+                name: editFormData.name,
+                target_amount: newAmount,
+                deadline: editFormData.deadline || null,
+                account_id: editFormData.account_id
+            })
+            setShowEditModal(false)
+        } catch (err) {
+            setEditError(err.message)
+        } finally {
+            setIsSubmittingEdit(false)
+        }
+    }
 
     // Fetch transactions of all participant accounts
     useEffect(() => {
@@ -118,13 +165,22 @@ export default function GoalDetailPage() {
                         <Users size={20} />
                     </button>
                     {isCreator && (
-                        <button
-                            onClick={handleDelete}
-                            className="p-2 hover:bg-red-50 rounded-full text-red-500 transition-colors"
-                            title="Eliminar meta"
-                        >
-                            <Trash2 size={20} />
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleOpenEdit}
+                                className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
+                                title="Editar meta"
+                            >
+                                <Edit3 size={20} />
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                className="p-2 hover:bg-red-50 rounded-full text-red-500 transition-colors"
+                                title="Eliminar meta"
+                            >
+                                <Trash2 size={20} />
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
@@ -255,6 +311,91 @@ export default function GoalDetailPage() {
                     resourceId={goal.id}
                     resourceName={goal.name}
                 />
+            )}
+            {/* Edit Goal Modal */}
+            {showEditModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-gray-900">Editar Meta</h2>
+                            <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                                <Plus className="rotate-45" size={20} />
+                            </button>
+                        </div>
+
+                        {editError && (
+                            <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
+                                {editError}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleEditSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la Meta</label>
+                                <input
+                                    required
+                                    type="text"
+                                    value={editFormData.name}
+                                    onChange={e => setEditFormData({ ...editFormData, name: e.target.value })}
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Monto Objetivo</label>
+                                <input
+                                    required
+                                    type="number"
+                                    step="0.01"
+                                    value={editFormData.target_amount}
+                                    onChange={e => {
+                                        setEditFormData({ ...editFormData, target_amount: e.target.value })
+                                        setEditError('')
+                                    }}
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                />
+                                <p className="text-xs text-blue-600 mt-1">Solo puedes incrementar el monto actual ({new Intl.NumberFormat('es-AR', { style: 'currency', currency: goal.myAccount?.currency || 'ARS' }).format(goal.target_amount)}).</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Cuenta para Ahorrar <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    required
+                                    value={editFormData.account_id}
+                                    onChange={e => setEditFormData({ ...editFormData, account_id: e.target.value })}
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="">Seleccionar cuenta...</option>
+                                    {availableAccounts.map(acc => (
+                                        <option key={acc.id} value={acc.id}>
+                                            {acc.name} ({acc.currency})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Límite (Opcional)</label>
+                                <input
+                                    type="date"
+                                    value={editFormData.deadline}
+                                    onChange={e => setEditFormData({ ...editFormData, deadline: e.target.value })}
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isSubmittingEdit}
+                                className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            >
+                                {isSubmittingEdit ? 'Guardando...' : 'Guardar Cambios'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
             )}
         </div>
     )

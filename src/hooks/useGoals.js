@@ -108,6 +108,27 @@ export const useGoals = () => {
     }
 
     /**
+     * Updates an existing goal.
+     * @param {string} goalId - The ID of the goal to update.
+     * @param {object} updates - The new values { name, target_amount, deadline, account_id }
+     */
+    const updateGoal = async (goalId, updates) => {
+        try {
+            const { error } = await supabase
+                .from('goals')
+                .update(updates)
+                .eq('id', goalId)
+                .eq('user_id', user.id)
+
+            if (error) throw error
+            await fetchGoals()
+        } catch (err) {
+            setError(err.message)
+            throw err
+        }
+    }
+
+    /**
      * Updates a goal's linked account.
      */
     const updateGoalAccount = async (goalId, accountId) => {
@@ -139,5 +160,5 @@ export const useGoals = () => {
         }
     }, [user?.id])
 
-    return { goals, loading, error, createGoal, deleteGoal, updateGoalAccount, refreshGoals: fetchGoals }
+    return { goals, loading, error, createGoal, updateGoal, deleteGoal, updateGoalAccount, refreshGoals: fetchGoals }
 }
