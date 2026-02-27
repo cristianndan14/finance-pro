@@ -32,6 +32,7 @@ export const useAnalytics = () => {
                     category:categories(name, color),
                     account:accounts!account_id(currency)
                 `)
+                .eq('user_id', user.id)
                 .gte('created_at', sixMonthsAgo.toISOString())
                 .order('created_at', { ascending: true })
 

@@ -4,11 +4,13 @@ import { supabase } from '../lib/supabaseClient'
 import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
 import { ArrowLeft, Search, Filter, Loader2, Calendar, X } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 export default function TransactionsPage() {
     const navigate = useNavigate()
     const { accounts } = useAccounts()
     const { categories } = useCategories()
+    const { user } = useAuth()
 
     const [transactions, setTransactions] = useState([])
     const [loading, setLoading] = useState(true)
@@ -46,6 +48,7 @@ export default function TransactionsPage() {
                     account:accounts!account_id(name, currency),
                     budget:budgets(name)
                 `)
+                .eq('user_id', user?.id)
                 .order('created_at', { ascending: false })
 
             // Apply Filters

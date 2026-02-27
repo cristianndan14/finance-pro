@@ -60,6 +60,7 @@ export default function Home() {
                     account:accounts!account_id(name, currency),
                     budget:budgets(name)
                 `)
+                .eq('user_id', user?.id)
                 .order('created_at', { ascending: false })
 
             if (error) throw error

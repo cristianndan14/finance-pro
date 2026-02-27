@@ -19,6 +19,7 @@ export const useRecurringTransactions = () => {
             account:accounts(name, currency),
             budget:budgets(name)
         `)
+                .eq('user_id', user.id)
                 .order('created_at', { ascending: false })
 
             if (error) throw error

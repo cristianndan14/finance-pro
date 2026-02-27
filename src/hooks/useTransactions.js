@@ -33,6 +33,9 @@ export const useTransactions = (budgetId = null, accountId = null) => {
             } else if (accountId) {
                 // Just filtering by account
                 query = query.or(`account_id.eq.${accountId},transfer_target_id.eq.${accountId}`)
+            } else {
+                // General fetch (Dashboard, Transactions list) - filter by user_id
+                query = query.eq('user_id', user.id)
             }
 
             const { data, error } = await query
