@@ -102,11 +102,40 @@ export default function TransferModal({ isOpen, onClose, preselectedSourceId, pr
                                 required
                             >
                                 <option value="">Seleccionar origen</option>
-                                {sourceAccounts.map(acc => (
-                                    <option key={acc.id} value={acc.id}>
-                                        {acc.name} ({new Intl.NumberFormat('es-AR', { style: 'currency', currency: acc.currency || 'ARS' }).format(acc.current_balance)})
-                                    </option>
-                                ))}
+                                {(() => {
+                                    const entitiesMap = {}
+                                    const unassigned = []
+                                    sourceAccounts.forEach(acc => {
+                                        if (acc.entity) {
+                                            if (!entitiesMap[acc.entity.name]) entitiesMap[acc.entity.name] = []
+                                            entitiesMap[acc.entity.name].push(acc)
+                                        } else {
+                                            unassigned.push(acc)
+                                        }
+                                    })
+                                    return (
+                                        <>
+                                            {Object.entries(entitiesMap).map(([name, accs]) => (
+                                                <optgroup key={name} label={name}>
+                                                    {accs.map(acc => (
+                                                        <option key={acc.id} value={acc.id}>
+                                                            {acc.name} ({new Intl.NumberFormat('es-AR', { style: 'currency', currency: acc.currency || 'ARS' }).format(acc.current_balance)})
+                                                        </option>
+                                                    ))}
+                                                </optgroup>
+                                            ))}
+                                            {unassigned.length > 0 && (
+                                                <optgroup label={Object.keys(entitiesMap).length > 0 ? "Sin Entidad" : "Cuentas"}>
+                                                    {unassigned.map(acc => (
+                                                        <option key={acc.id} value={acc.id}>
+                                                            {acc.name} ({new Intl.NumberFormat('es-AR', { style: 'currency', currency: acc.currency || 'ARS' }).format(acc.current_balance)})
+                                                        </option>
+                                                    ))}
+                                                </optgroup>
+                                            )}
+                                        </>
+                                    )
+                                })()}
                             </select>
                         </div>
 
@@ -129,11 +158,40 @@ export default function TransferModal({ isOpen, onClose, preselectedSourceId, pr
                                         required
                                     >
                                         <option value="">Seleccionar destino</option>
-                                        {targetAccounts.map(acc => (
-                                            <option key={acc.id} value={acc.id}>
-                                                {acc.name} ({new Intl.NumberFormat('es-AR', { style: 'currency', currency: acc.currency || 'ARS' }).format(acc.current_balance)})
-                                            </option>
-                                        ))}
+                                        {(() => {
+                                            const entitiesMap = {}
+                                            const unassigned = []
+                                            targetAccounts.forEach(acc => {
+                                                if (acc.entity) {
+                                                    if (!entitiesMap[acc.entity.name]) entitiesMap[acc.entity.name] = []
+                                                    entitiesMap[acc.entity.name].push(acc)
+                                                } else {
+                                                    unassigned.push(acc)
+                                                }
+                                            })
+                                            return (
+                                                <>
+                                                    {Object.entries(entitiesMap).map(([name, accs]) => (
+                                                        <optgroup key={name} label={name}>
+                                                            {accs.map(acc => (
+                                                                <option key={acc.id} value={acc.id}>
+                                                                    {acc.name} ({new Intl.NumberFormat('es-AR', { style: 'currency', currency: acc.currency || 'ARS' }).format(acc.current_balance)})
+                                                                </option>
+                                                            ))}
+                                                        </optgroup>
+                                                    ))}
+                                                    {unassigned.length > 0 && (
+                                                        <optgroup label={Object.keys(entitiesMap).length > 0 ? "Sin Entidad" : "Cuentas"}>
+                                                            {unassigned.map(acc => (
+                                                                <option key={acc.id} value={acc.id}>
+                                                                    {acc.name} ({new Intl.NumberFormat('es-AR', { style: 'currency', currency: acc.currency || 'ARS' }).format(acc.current_balance)})
+                                                                </option>
+                                                            ))}
+                                                        </optgroup>
+                                                    )}
+                                                </>
+                                            )
+                                        })()}
                                     </select>
                                 </div>
                             </>

@@ -265,12 +265,44 @@ export default function NewTransactionPage() {
                             onChange={(e) => setFormData({ ...formData, account_id: e.target.value })}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                         >
-                            <option value="">Seleccionar cuenta</option>
-                            {accounts.map((account) => (
-                                <option key={account.id} value={account.id}>
-                                    {account.name} ({account.currency})
-                                </option>
-                            ))}
+                            <option value="">Seleccionar producto</option>
+                            {(() => {
+                                // Group accounts by entity
+                                const entitiesMap = {}
+                                const unassigned = []
+
+                                accounts.forEach(acc => {
+                                    if (acc.entity) {
+                                        if (!entitiesMap[acc.entity.name]) entitiesMap[acc.entity.name] = []
+                                        entitiesMap[acc.entity.name].push(acc)
+                                    } else {
+                                        unassigned.push(acc)
+                                    }
+                                })
+
+                                return (
+                                    <>
+                                        {Object.entries(entitiesMap).map(([entityName, entityAccounts]) => (
+                                            <optgroup key={entityName} label={entityName}>
+                                                {entityAccounts.map(account => (
+                                                    <option key={account.id} value={account.id}>
+                                                        {account.name} ({account.currency})
+                                                    </option>
+                                                ))}
+                                            </optgroup>
+                                        ))}
+                                        {unassigned.length > 0 && (
+                                            <optgroup label={Object.keys(entitiesMap).length > 0 ? "Sin Entidad" : "Cuentas"}>
+                                                {unassigned.map(account => (
+                                                    <option key={account.id} value={account.id}>
+                                                        {account.name} ({account.currency})
+                                                    </option>
+                                                ))}
+                                            </optgroup>
+                                        )}
+                                    </>
+                                )
+                            })()}
                         </select>
                     </div>
                 </div>

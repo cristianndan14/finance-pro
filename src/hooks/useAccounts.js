@@ -14,7 +14,7 @@ export const useAccounts = () => {
     try {
       const { data, error } = await supabase
         .from('accounts')
-        .select('*')
+        .select('*, entity:entities(*)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 

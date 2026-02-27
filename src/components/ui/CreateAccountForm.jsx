@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react'
-import { X } from 'lucide-react'
+import { X, Plus } from 'lucide-react'
 import CurrencyInput from './CurrencyInput'
+import { useEntities } from '../../hooks/useEntities'
+import CreateEntityModal from './CreateEntityModal'
 
 export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
+    const { entities, loading: entitiesLoading } = useEntities()
+    const [showCreateEntity, setShowCreateEntity] = useState(false)
+
     const [formData, setFormData] = useState({
         name: '',
         type: 'bank',
         current_balance: '',
         currency: 'ARS',
+        entity_id: '',
     })
     const [loading, setLoading] = useState(false)
 
@@ -20,6 +26,7 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
                 type: initialData.type,
                 current_balance: initialData.current_balance,
                 currency: initialData.currency,
+                entity_id: initialData.entity_id || '',
                 credit_limit: initialData.credit_limit,
                 installments_limit: initialData.installments_limit,
                 closing_day: initialData.closing_day,
@@ -39,10 +46,11 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
                     ? -Math.abs(Number(formData.current_balance) || 0)
                     : Number(formData.current_balance) || 0,
                 installments_limit: isUnifiedLimit ? null : Number(formData.installments_limit) || null,
-                credit_limit: formData.type === 'credit' ? (Number(formData.credit_limit) || null) : null
+                credit_limit: formData.type === 'credit' ? (Number(formData.credit_limit) || null) : null,
+                entity_id: formData.entity_id || null
             }
             await onSubmit(dataToSubmit)
-            setFormData({ name: '', type: 'bank', current_balance: '', currency: 'ARS' })
+            setFormData({ name: '', type: 'bank', current_balance: '', currency: 'ARS', entity_id: '' })
         } catch (error) {
             console.error('Error saving account:', error)
         } finally {
@@ -67,15 +75,42 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Entidad
+                            </label>
+                            <button
+                                type="button"
+                                onClick={() => setShowCreateEntity(true)}
+                                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 font-medium"
+                            >
+                                <Plus size={14} /> Nueva
+                            </button>
+                        </div>
+                        <select
+                            value={formData.entity_id}
+                            onChange={(e) => setFormData({ ...formData, entity_id: e.target.value })}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="">-- Sin Entidad (o seleccionar luego) --</option>
+                            {!entitiesLoading && entities.map((entity) => (
+                                <option key={entity.id} value={entity.id}>
+                                    {entity.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Nombre
+                            Nombre del Producto
                         </label>
                         <input
                             type="text"
                             required
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="Ej: Santander, Efectivo, Mercado Pago"
+                            placeholder="Ej: Caja de Ahorro, Visa Gold"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
@@ -216,6 +251,16 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
                     </div>
                 </form>
             </div>
+
+            {showCreateEntity && (
+                <CreateEntityModal
+                    onClose={() => setShowCreateEntity(false)}
+                    onSuccess={(newEntity) => {
+                        setFormData(prev => ({ ...prev, entity_id: newEntity.id }))
+                        setShowCreateEntity(false)
+                    }}
+                />
+            )}
         </div>
     )
 }

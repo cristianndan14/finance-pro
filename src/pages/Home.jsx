@@ -2,22 +2,27 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAccounts } from '../hooks/useAccounts'
+import { useEntities } from '../hooks/useEntities'
 import { supabase } from '../lib/supabaseClient'
-import { LogOut, Plus, Loader2, Edit2, Trash2, Download } from 'lucide-react'
+import { LogOut, Plus, Loader2, Edit2, Trash2, Download, Building, FolderPlus } from 'lucide-react'
 import AccountCard from '../components/ui/AccountCard'
 import CreateAccountForm from '../components/ui/CreateAccountForm'
+import CreateEntityModal from '../components/ui/CreateEntityModal'
 import QuickActions from '../components/dashboard/QuickActions'
 import CurrencySummary from '../components/ui/CurrencySummary'
 
 export default function Home() {
     const { user, signOut } = useAuth()
-    const { accounts, loading, addAccount, updateAccount, deleteAccount } = useAccounts()
+    const { accounts, loading: accountsLoading, addAccount, updateAccount, deleteAccount } = useAccounts()
+    const { entities, loading: entitiesLoading, updateEntity, deleteEntity } = useEntities()
 
-    // Show all accounts (goals no longer create dedicated accounts)
+    // Show all accounts
     const visibleAccounts = accounts
 
     const [showCreateForm, setShowCreateForm] = useState(false)
+    const [showCreateEntity, setShowCreateEntity] = useState(false)
     const [editingAccount, setEditingAccount] = useState(null)
+    const [editingEntity, setEditingEntity] = useState(null)
     const [searchParams] = useSearchParams()
     const [exporting, setExporting] = useState(false)
     const navigate = useNavigate()
@@ -40,8 +45,14 @@ export default function Home() {
     }
 
     const handleDeleteAccount = async (accountId) => {
-        if (window.confirm('¿Estás seguro de eliminar esta cuenta?')) {
+        if (window.confirm('¿Estás seguro de eliminar este producto?')) {
             await deleteAccount(accountId)
+        }
+    }
+
+    const handleDeleteEntity = async (entityId) => {
+        if (window.confirm('¿Estás seguro de eliminar esta entidad? Los productos asociados quedarán sin asignar.')) {
+            await deleteEntity(entityId)
         }
     }
 
@@ -106,13 +117,15 @@ export default function Home() {
         }
     }
 
-    if (loading) {
+    if (accountsLoading || entitiesLoading) {
         return (
             <div className="flex h-screen items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
             </div>
         )
     }
+
+    const unassignedAccounts = visibleAccounts.filter(acc => !acc.entity_id)
 
     return (
         <div className="p-4 pb-20">
@@ -149,48 +162,125 @@ export default function Home() {
 
             {/* Accounts Section */}
             <div className="mb-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold text-gray-900">Mis Cuentas</h2>
-                    <button
-                        onClick={() => setShowCreateForm(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
-                    >
-                        <Plus size={18} />
-                        Agregar
-                    </button>
-                </div>
-
-                {visibleAccounts.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                        <p className="text-gray-500 mb-4">No tienes cuentas registradas</p>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-lg font-bold text-gray-900">Mis Productos Financieros</h2>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setShowCreateEntity(true)}
+                            className="flex items-center justify-center p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                            title="Nueva Entidad"
+                        >
+                            <Building size={18} />
+                        </button>
                         <button
                             onClick={() => setShowCreateForm(true)}
-                            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
                         >
-                            Crear tu primera cuenta
+                            <Plus size={18} />
+                            Producto
+                        </button>
+                    </div>
+                </div>
+
+                {visibleAccounts.length === 0 && entities.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                        <p className="text-gray-500 mb-4">No tienes entidades ni productos registrados</p>
+                        <button
+                            onClick={() => setShowCreateEntity(true)}
+                            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors mb-2"
+                        >
+                            Crear tu primera entidad
                         </button>
                     </div>
                 ) : (
-                    <div className="space-y-3">
-                        {visibleAccounts.map((account) => (
-                            <div key={account.id} className="relative group">
-                                <AccountCard account={account} />
-                                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={() => setEditingAccount(account)}
-                                        className="p-2 bg-white rounded-full shadow-md hover:bg-blue-50 text-blue-600 transition-colors"
-                                    >
-                                        <Edit2 size={16} />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteAccount(account.id)}
-                                        className="p-2 bg-white rounded-full shadow-md hover:bg-red-50 text-red-600 transition-colors"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
+                    <div className="space-y-6">
+                        {entities.map(entity => {
+                            const entityAccounts = visibleAccounts.filter(acc => acc.entity_id === entity.id)
+                            return (
+                                <div key={entity.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                                    <div className="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center group">
+                                        <div className="flex items-center gap-2 text-gray-800 font-semibold">
+                                            <Building size={18} className="text-blue-600" />
+                                            {entity.name}
+                                        </div>
+                                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => {
+                                                    const newName = window.prompt("Nuevo nombre para la entidad:", entity.name)
+                                                    if (newName && newName.trim() !== "") {
+                                                        updateEntity(entity.id, { name: newName.trim() })
+                                                    }
+                                                }}
+                                                className="p-1.5 bg-white rounded-full shadow-sm hover:bg-blue-50 text-blue-600"
+                                            >
+                                                <Edit2 size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteEntity(entity.id)}
+                                                className="p-1.5 bg-white rounded-full shadow-sm hover:bg-red-50 text-red-600"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="p-3 space-y-2">
+                                        {entityAccounts.length === 0 ? (
+                                            <p className="text-sm text-gray-500 italic p-2 text-center">Sin productos asignados</p>
+                                        ) : (
+                                            entityAccounts.map((account) => (
+                                                <div key={account.id} className="relative group">
+                                                    <AccountCard account={account} />
+                                                    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setEditingAccount(account); }}
+                                                            className="p-2 bg-white rounded-full shadow-md hover:bg-blue-50 text-blue-600 transition-colors"
+                                                        >
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleDeleteAccount(account.id); }}
+                                                            className="p-2 bg-white rounded-full shadow-md hover:bg-red-50 text-red-600 transition-colors"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )
+                        })}
+
+                        {unassignedAccounts.length > 0 && (
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                                <div className="bg-orange-50 px-4 py-3 border-b border-orange-100 flex items-center gap-2 text-orange-800 font-semibold">
+                                    <FolderPlus size={18} />
+                                    Productos Sin Asignar
+                                </div>
+                                <div className="p-3 space-y-2">
+                                    {unassignedAccounts.map((account) => (
+                                        <div key={account.id} className="relative group">
+                                            <AccountCard account={account} />
+                                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setEditingAccount(account); }}
+                                                    className="p-2 bg-white rounded-full shadow-md hover:bg-blue-50 text-blue-600 transition-colors"
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteAccount(account.id); }}
+                                                    className="p-2 bg-white rounded-full shadow-md hover:bg-red-50 text-red-600 transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                        ))}
+                        )}
                     </div>
                 )}
             </div>
@@ -204,6 +294,13 @@ export default function Home() {
                         setShowCreateForm(false)
                         setEditingAccount(null)
                     }}
+                />
+            )}
+
+            {/* Create Entity Modal */}
+            {showCreateEntity && (
+                <CreateEntityModal
+                    onClose={() => setShowCreateEntity(false)}
                 />
             )}
         </div>
