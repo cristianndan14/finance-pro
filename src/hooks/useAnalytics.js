@@ -29,6 +29,8 @@ export const useAnalytics = () => {
                     amount,
                     type,
                     created_at,
+                    is_transfer,
+                    transfer_target_id,
                     category:categories(name, color),
                     account:accounts!account_id(currency)
                 `)
@@ -41,7 +43,7 @@ export const useAnalytics = () => {
             // 1.5 Fetch Accounts for Balance by Currency
             const { data: accounts, error: accountsError } = await supabase
                 .from('accounts')
-                .select('current_balance, currency')
+                .select('id, type, current_balance, currency')
 
             if (accountsError) throw accountsError
 
@@ -55,6 +57,12 @@ export const useAnalytics = () => {
             // In a future update, we should implement currency conversion.
             const processedTransactions = transactions
 
+            // Helper to get account type
+            const getAccountType = (id) => {
+                const acc = accounts.find(a => a.id === id)
+                return acc ? acc.type : null
+            }
+
             // 2. Process Monthly Stats (Income vs Expense)
             const statsMap = {}
             processedTransactions.forEach(t => {
@@ -62,10 +70,15 @@ export const useAnalytics = () => {
                 if (!statsMap[monthKey]) {
                     statsMap[monthKey] = { name: monthKey, income: 0, expense: 0 }
                 }
-                if (t.type === 'ingreso') {
+                
+                const isExpenseTransferToCredit = t.is_transfer && getAccountType(t.transfer_target_id) === 'credit'
+
+                if (t.type === 'ingreso' && !t.is_transfer) {
                     statsMap[monthKey].income += Number(t.amount)
                 } else if (t.type === 'egreso') {
-                    statsMap[monthKey].expense += Number(t.amount)
+                    if (!t.is_transfer || isExpenseTransferToCredit) {
+                        statsMap[monthKey].expense += Number(t.amount)
+                    }
                 }
             })
             const sortedStats = Object.values(statsMap).sort((a, b) => a.name.localeCompare(b.name))
@@ -84,9 +97,13 @@ export const useAnalytics = () => {
 
             // 3. Process Expenses by Category (Current Month)
             const currentMonth = new Date().toISOString().slice(0, 7)
-            const currentMonthExpenses = processedTransactions.filter(t =>
-                t.created_at.startsWith(currentMonth) && t.type === 'egreso'
-            )
+            const currentMonthExpenses = processedTransactions.filter(t => {
+                if (!t.created_at.startsWith(currentMonth)) return false
+                if (t.type !== 'egreso') return false
+                
+                const isExpenseTransferToCredit = t.is_transfer && getAccountType(t.transfer_target_id) === 'credit'
+                return !t.is_transfer || isExpenseTransferToCredit
+            })
 
             const categoryMap = {}
             currentMonthExpenses.forEach(t => {
