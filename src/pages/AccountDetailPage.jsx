@@ -16,7 +16,8 @@ export default function AccountDetailPage() {
     const { id } = useParams()
     const navigate = useNavigate()
     const { accounts, loading: accountsLoading, updateAccount, deleteAccount } = useAccounts()
-    const [selectedMonthOffset, setSelectedMonthOffset] = useState(0)
+    const PAST_MONTHS = 12
+    const [selectedMonthOffset, setSelectedMonthOffset] = useState(PAST_MONTHS)
     const [transactions, setTransactions] = useState([])
     const [transactionsLoading, setTransactionsLoading] = useState(true)
     const [editingAccount, setEditingAccount] = useState(null)
@@ -41,10 +42,11 @@ export default function AccountDetailPage() {
         return { month, year }
     }
 
-    // Generate next 12 statement months
-    const statementMonthsArr = Array.from({ length: 12 }, (_, i) => {
+    // Generate past and future statement months (12 back, 12 forward)
+    const statementMonthsArr = Array.from({ length: 24 }, (_, i) => {
+        const offset = i - PAST_MONTHS
         const date = new Date()
-        date.setMonth(date.getMonth() + i)
+        date.setMonth(date.getMonth() + offset)
         // Adjust for current month if we are past the closing day
         if (account?.closing_day && new Date().getDate() > account.closing_day) {
             date.setMonth(date.getMonth() + 1)
@@ -457,8 +459,8 @@ export default function AccountDetailPage() {
                                 // Calculate which 3 months to show
                                 let start = Math.max(0, selectedMonthOffset - 1);
                                 let end = start + 3;
-                                if (end > 12) {
-                                    end = 12;
+                                if (end > statementMonthsArr.length) {
+                                    end = statementMonthsArr.length;
                                     start = Math.max(0, end - 3);
                                 }
 
@@ -481,11 +483,11 @@ export default function AccountDetailPage() {
                         </div>
 
                         <button
-                            onClick={() => setSelectedMonthOffset(prev => Math.min(11, prev + 1))}
-                            disabled={selectedMonthOffset === 11}
+                            onClick={() => setSelectedMonthOffset(prev => Math.min(23, prev + 1))}
+                            disabled={selectedMonthOffset === 23}
                             className={cn(
                                 "p-2 rounded-full transition-all flex-shrink-0",
-                                selectedMonthOffset === 11 ? "text-gray-200 cursor-not-allowed" : "text-blue-600 hover:bg-blue-50 active:scale-90"
+                                selectedMonthOffset === 23 ? "text-gray-200 cursor-not-allowed" : "text-blue-600 hover:bg-blue-50 active:scale-90"
                             )}
                         >
                             <ChevronRight size={20} />
