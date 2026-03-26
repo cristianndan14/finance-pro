@@ -58,21 +58,33 @@ export default function AccountCard({ account }) {
       </div>
       <div className="flex-1">
         <p className="text-sm font-medium text-gray-500 capitalize">{account.name}</p>
-        <div className="flex flex-col">
-          <p className={cn("text-lg font-bold",
+        <div className="flex flex-col gap-1 mt-1">
+          <p className={cn("text-lg font-bold leading-none",
             account.type === 'credit'
               ? "text-gray-900"
               : (account.current_balance < 0 ? "text-red-600" : "text-gray-900")
           )}>
             {new Intl.NumberFormat('es-AR', {
               style: 'currency',
-              currency: account.currency || 'ARS',
+              currency: account.type === 'credit' ? 'ARS' : (account.currency || 'ARS'),
             }).format(
               account.type === 'credit'
-                ? (Number(account.credit_limit || 0) + Number(account.current_balance))
+                ? (Number(account.credit_limit || 0) + Number(account.current_balance || 0))
                 : account.current_balance
             )}
+            {account.type === 'credit' && <span className="text-[10px] text-gray-400 font-normal ml-1">ARS</span>}
           </p>
+          {account.type === 'credit' && (Number(account.credit_limit_usd) > 0 || Number(account.current_balance_usd) < 0) && (
+              <p className="text-sm font-bold text-gray-700 leading-none">
+                {new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'USD',
+                }).format(
+                  account.credit_limit_usd ? (Number(account.credit_limit_usd || 0) + Number(account.current_balance_usd || 0)) : (Number(account.current_balance_usd || 0))
+                )}
+                <span className="text-[10px] text-gray-400 font-normal ml-1">USD</span>
+              </p>
+          )}
         </div>
       </div>
     </div>

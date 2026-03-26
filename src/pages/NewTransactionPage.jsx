@@ -22,6 +22,7 @@ export default function NewTransactionPage() {
         account_id: '',
         type: 'egreso',
         amount: '',
+        currency: 'ARS',
         description: '',
         isRecurring: false,
         frequency: 'monthly',
@@ -125,6 +126,7 @@ export default function NewTransactionPage() {
                 account_id: formData.account_id,
                 type: formData.type,
                 description: formData.description,
+                currency: selectedAccount?.type === 'credit' ? formData.currency : (selectedAccount?.currency || 'ARS'),
             }
 
             // Recurring Logic
@@ -245,13 +247,33 @@ export default function NewTransactionPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                         Monto
                     </label>
-                    <CurrencyInput
-                        required
-                        value={formData.amount}
-                        onChange={(val) => setFormData({ ...formData, amount: val })}
-                        placeholder="0.00"
-                        className="!text-lg"
-                    />
+                    <div className="flex gap-2">
+                        <div className="flex-1">
+                            <CurrencyInput
+                                required
+                                value={formData.amount}
+                                onChange={(val) => setFormData({ ...formData, amount: val })}
+                                placeholder="0.00"
+                                className="!text-lg"
+                            />
+                        </div>
+                        {(() => {
+                            const selectedAccount = accounts.find(a => a.id === formData.account_id);
+                            if (selectedAccount?.type === 'credit') {
+                                return (
+                                    <select
+                                        value={formData.currency}
+                                        onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                                        className="w-24 px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-700 font-medium"
+                                    >
+                                        <option value="ARS">ARS</option>
+                                        <option value="USD">USD</option>
+                                    </select>
+                                );
+                            }
+                            return null;
+                        })()}
+                    </div>
                 </div>
 
                 <div className="grid gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">

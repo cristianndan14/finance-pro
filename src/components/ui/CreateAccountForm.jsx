@@ -12,6 +12,7 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
         name: '',
         type: 'bank',
         current_balance: '',
+        current_balance_usd: '',
         currency: 'ARS',
         entity_id: '',
     })
@@ -25,9 +26,11 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
                 name: initialData.name,
                 type: initialData.type,
                 current_balance: initialData.current_balance,
+                current_balance_usd: initialData.current_balance_usd || '',
                 currency: initialData.currency,
                 entity_id: initialData.entity_id || '',
                 credit_limit: initialData.credit_limit,
+                credit_limit_usd: initialData.credit_limit_usd || '',
                 installments_limit: initialData.installments_limit,
                 closing_day: initialData.closing_day,
                 due_day: initialData.due_day,
@@ -45,12 +48,16 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
                 current_balance: formData.type === 'credit'
                     ? -Math.abs(Number(formData.current_balance) || 0)
                     : Number(formData.current_balance) || 0,
+                current_balance_usd: formData.type === 'credit' && formData.current_balance_usd
+                    ? -Math.abs(Number(formData.current_balance_usd) || 0)
+                    : (Number(formData.current_balance_usd) || 0),
                 installments_limit: isUnifiedLimit ? null : Number(formData.installments_limit) || null,
                 credit_limit: formData.type === 'credit' ? (Number(formData.credit_limit) || null) : null,
+                credit_limit_usd: formData.type === 'credit' ? (Number(formData.credit_limit_usd) || null) : null,
                 entity_id: formData.entity_id || null
             }
             await onSubmit(dataToSubmit)
-            setFormData({ name: '', type: 'bank', current_balance: '', currency: 'ARS', entity_id: '' })
+            setFormData({ name: '', type: 'bank', current_balance: '', current_balance_usd: '', currency: 'ARS', entity_id: '' })
         } catch (error) {
             console.error('Error saving account:', error)
         } finally {
@@ -133,16 +140,30 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
                         </select>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            {formData.type === 'credit' ? 'Deuda Actual' : (initialData ? 'Saldo Actual' : 'Saldo Inicial')}
-                        </label>
-                        <CurrencyInput
-                            required
-                            value={formData.current_balance}
-                            onChange={(val) => setFormData({ ...formData, current_balance: val })}
-                            placeholder={formData.type === 'credit' ? "50000.00" : "0.00"}
-                        />
+                    <div className={formData.type === 'credit' ? 'grid grid-cols-2 gap-4' : ''}>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {formData.type === 'credit' ? 'Deuda ARS' : (initialData ? 'Saldo Actual' : 'Saldo Inicial')}
+                            </label>
+                            <CurrencyInput
+                                required
+                                value={formData.current_balance}
+                                onChange={(val) => setFormData({ ...formData, current_balance: val })}
+                                placeholder={formData.type === 'credit' ? "50000.00" : "0.00"}
+                            />
+                        </div>
+                        {formData.type === 'credit' && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Deuda USD
+                                </label>
+                                <CurrencyInput
+                                    value={formData.current_balance_usd || ''}
+                                    onChange={(val) => setFormData({ ...formData, current_balance_usd: val })}
+                                    placeholder="0.00"
+                                />
+                            </div>
+                        )}
                     </div>
 
                     {formData.type === 'credit' && (
@@ -163,7 +184,7 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
                             <div className={isUnifiedLimit ? "space-y-4" : "grid grid-cols-2 gap-4"}>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        {isUnifiedLimit ? 'Límite de Crédito' : 'Límite 1 Pago'}
+                                        {isUnifiedLimit ? 'Límite ARS' : 'Límite 1 Pago ARS'}
                                     </label>
                                     <CurrencyInput
                                         required
@@ -171,6 +192,18 @@ export default function CreateAccountForm({ initialData, onSubmit, onCancel }) {
                                         onChange={(val) => setFormData({ ...formData, credit_limit: val })}
                                     />
                                 </div>
+                                {isUnifiedLimit && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Límite USD
+                                        </label>
+                                        <CurrencyInput
+                                            value={formData.credit_limit_usd || ''}
+                                            onChange={(val) => setFormData({ ...formData, credit_limit_usd: val })}
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                )}
                                 {!isUnifiedLimit && (
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">

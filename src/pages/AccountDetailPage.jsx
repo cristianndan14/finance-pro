@@ -224,6 +224,7 @@ export default function AccountDetailPage() {
         })
 
         const totalDebt = Math.abs(account.current_balance || 0)
+        const totalDebtUsd = Math.abs(account.current_balance_usd || 0)
         // We assume payments pay off single purchases first
         const singlePaymentDebt = Math.max(0, totalExpensesSingle - totalPayments)
         const installmentDebt = Math.max(0, totalExpensesInstallments - Math.max(0, totalPayments - totalExpensesSingle))
@@ -235,7 +236,8 @@ export default function AccountDetailPage() {
             surplusOrigin: currentOrigin,
             singlePaymentDebt,
             installmentDebt,
-            totalDebt
+            totalDebt,
+            totalDebtUsd
         }
     })()
 
@@ -288,14 +290,27 @@ export default function AccountDetailPage() {
                 <div className="relative z-10">
                     <div className="mb-6 text-center">
                         <p className="text-sm font-medium opacity-90 mb-1 uppercase tracking-wider">
-                            {account.type === 'credit' ? 'Deuda Total' : 'Saldo Actual'}
+                            {account.type === 'credit' ? 'Deuda ARS' : 'Saldo Actual'}
                         </p>
                         <p className="text-4xl font-bold leading-tight">
                             {new Intl.NumberFormat('es-AR', {
                                 style: 'currency',
-                                currency: account.currency || 'ARS',
+                                currency: account.type === 'credit' ? 'ARS' : (account.currency || 'ARS'),
                             }).format(account.type === 'credit' ? totalDebt : account.current_balance)}
                         </p>
+                        {account.type === 'credit' && (totalDebtUsd > 0 || Number(account.credit_limit_usd) > 0) && (
+                            <div className="mt-3">
+                                <p className="text-[10px] font-medium opacity-80 mb-0.5 uppercase tracking-wider">
+                                    Deuda USD
+                                </p>
+                                <p className="text-2xl font-bold leading-tight text-white/90">
+                                    {new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD',
+                                    }).format(totalDebtUsd)}
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {account.type === 'credit' && (
