@@ -141,7 +141,7 @@ export default function AccountDetailPage() {
         return period.month === targetPeriod.month && period.year === targetPeriod.year
     })
 
-    const { totalIncome, totalExpenses, surplus, surplusOrigin, singlePaymentDebt, installmentDebt, totalDebt } = (() => {
+    const { totalIncome, totalExpenses, surplus, surplusOrigin, singlePaymentDebt, installmentDebt, totalDebt, totalDebtUsd } = (() => {
         if (account.type !== 'credit') {
             const income = filteredTransactions
                 .filter(t => (t.type === 'ingreso' && !t.is_transfer) || (t.is_transfer && t.transfer_target_id === id))
@@ -149,7 +149,7 @@ export default function AccountDetailPage() {
             const expenses = filteredTransactions
                 .filter(t => (t.type === 'egreso' && !t.is_transfer) || (t.is_transfer && t.account_id === id))
                 .reduce((sum, t) => sum + (t.amount || 0), 0)
-            return { totalIncome: income, totalExpenses: expenses, surplus: 0, surplusOrigin: null, singlePaymentDebt: 0, installmentDebt: 0, totalDebt: 0 }
+            return { totalIncome: income, totalExpenses: expenses, surplus: 0, surplusOrigin: null, singlePaymentDebt: 0, installmentDebt: 0, totalDebt: 0, totalDebtUsd: 0 }
         }
 
         // 1. Group ALL transactions by period
