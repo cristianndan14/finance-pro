@@ -106,6 +106,7 @@ export const useRecurringTransactions = () => {
                     account_id: rule.account_id,
                     amount: rule.amount,
                     type: rule.type,
+                    currency: rule.currency || 'ARS',
                     description: rule.description || 'Transacción Recurrente',
                     recurring_id: rule.id,
                     // created_at defaults to now, which is correct for "record date"
