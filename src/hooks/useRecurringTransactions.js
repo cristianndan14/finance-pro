@@ -35,7 +35,7 @@ export const useRecurringTransactions = () => {
         try {
             const { error } = await supabase
                 .from('recurring_transactions')
-                .insert([data])
+                .insert([{ ...data, user_id: user?.id }])
 
             if (error) throw error
             await fetchRecurringTransactions()
