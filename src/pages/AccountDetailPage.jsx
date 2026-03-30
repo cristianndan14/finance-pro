@@ -42,19 +42,30 @@ export default function AccountDetailPage() {
         return { month, year }
     }
 
-    // Generate past and future statement months (12 back, 12 forward)
+    // Generate past and future statement months (12 back, 12 forward).
+    // We use pure numeric arithmetic on month/year to avoid Date day-overflow bugs:
+    // e.g. setMonth(Feb) on day=29 silently overflows to March, which combined with
+    // the closing_day +1 adjustment duplicates April and skips February entirely.
+    const now = new Date()
+    // Determine the current statement month using integer arithmetic (no Date mutation)
+    let curStatMonth = now.getMonth()
+    let curStatYear  = now.getFullYear()
+    if (account?.closing_day && now.getDate() > account.closing_day) {
+        curStatMonth += 1
+        if (curStatMonth > 11) { curStatMonth = 0; curStatYear += 1 }
+    }
     const statementMonthsArr = Array.from({ length: 24 }, (_, i) => {
         const offset = i - PAST_MONTHS
-        const date = new Date()
-        date.setMonth(date.getMonth() + offset)
-        // Adjust for current month if we are past the closing day
-        if (account?.closing_day && new Date().getDate() > account.closing_day) {
-            date.setMonth(date.getMonth() + 1)
-        }
+        let m = curStatMonth + offset
+        let y = curStatYear
+        while (m < 0)  { m += 12; y -= 1 }
+        while (m > 11) { m -= 12; y += 1 }
+        // Use day=1 so no month-overflow can happen when formatting
+        const date = new Date(y, m, 1)
         return {
             label: date.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }),
-            month: date.getMonth(),
-            year: date.getFullYear(),
+            month: m,
+            year: y,
             offset: i
         }
     })
