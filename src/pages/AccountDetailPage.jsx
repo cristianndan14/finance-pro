@@ -171,7 +171,20 @@ export default function AccountDetailPage() {
         const sortedPeriods = Object.keys(periodBalances).sort()
 
         // 3. Calculate running balance and origin
-        let runningBalance = 0
+        // The runningBalance must start from the account's INITIAL balance (at creation),
+        // not from 0. The initial balance is reconstructed retroactively:
+        // initial_balance = current_balance - sum_of_all_transaction_effects
+        // This handles the case where a credit card is created with a pre-existing debt
+        // (set directly in current_balance) but no corresponding transaction exists.
+        let allTransactionsNet = 0
+        transactions.forEach(t => {
+            const isInc = (t.type === 'ingreso' && !t.is_transfer) || (t.is_transfer && t.transfer_target_id === id)
+            const isExp = (t.type === 'egreso' && !t.is_transfer) || (t.is_transfer && t.account_id === id)
+            if (isInc) allTransactionsNet += (t.amount || 0)
+            if (isExp) allTransactionsNet -= (t.amount || 0)
+        })
+        const initialBalance = (account.current_balance || 0) - allTransactionsNet
+        let runningBalance = initialBalance
         let currentOrigin = null
         const targetKey = `${targetPeriod.year}-${String(targetPeriod.month).padStart(2, '0')}`
 
